@@ -57,7 +57,7 @@ extern "C" {
  * @brief Control frame sent from Raspberry Pi 5 (Master) to ESP32 (Slave).
  * @note Fixed size: 16 bytes.
  */
-#pragma pack(push, 1)
+#pragma pack(push, 1) // Synthetic padding disabled (by default compilators depending of architecture of cpu 32-64 add padding bytes)
 typedef struct {
     /** @brief Frame synchronization delimiter, must be @ref SPI_SYNC_BYTE. */
     uint8_t  sync_byte;
