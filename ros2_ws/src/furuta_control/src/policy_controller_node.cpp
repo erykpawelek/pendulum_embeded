@@ -29,7 +29,8 @@ CallbackReturn PolicyControllerNode::on_activate(const rclcpp_lifecycle::State &
   // Base class call automatically activates all managed LifecyclePublishers
   LifecycleNode::on_activate(previous_state);
 
-  // TODO: Enable control flag or start control timer
+  // TODO: Start the dedicated real-time thread (SCHED_FIFO, pinned core) that runs the
+  //       50 Hz SPI exchange + inference. It must not run inside the executor.
 
   return CallbackReturn::SUCCESS;
 }
@@ -38,7 +39,8 @@ CallbackReturn PolicyControllerNode::on_deactivate(const rclcpp_lifecycle::State
 {
   RCLCPP_INFO(get_logger(), "Deactivating PolicyControllerNode...");
 
-  // TODO: Publish a final zero-velocity command before disabling the publisher
+  // TODO: Stop the real-time thread, then send a stop frame (control_frame_make_stop())
+  //       so the motor halts before the publisher is disabled
 
   // Base class call automatically deactivates all managed LifecyclePublishers
   LifecycleNode::on_deactivate(previous_state);
@@ -61,25 +63,11 @@ CallbackReturn PolicyControllerNode::on_shutdown(const rclcpp_lifecycle::State &
   (void)previous_state;
   RCLCPP_INFO(get_logger(), "Shutting down PolicyControllerNode...");
 
-  // TODO: Ensure motor command is zeroed and release remaining resources
+  // TODO: Stop the real-time thread and send a stop frame (control_frame_make_stop()).
+  //       Even if this never runs (crash, kill -9) the STM32 watchdog stops the motor
+  //       after SPI_WATCHDOG_TIMEOUT_MS.
 
   return CallbackReturn::SUCCESS;
 }
 
 }  // namespace furuta_control
-
-int main(int argc, char ** argv)
-{
-  rclcpp::init(argc, argv);
-
-  // Use SingleThreadedExecutor to guarantee deterministic, lock-free callback execution
-  rclcpp::executors::SingleThreadedExecutor executor;
-  auto node = std::make_shared<furuta_control::PolicyControllerNode>();
-
-  // LifecycleNode requires passing its base interface to the executor
-  executor.add_node(node->get_node_base_interface());
-  executor.spin();
-
-  rclcpp::shutdown();
-  return 0;
-}

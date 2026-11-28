@@ -3,6 +3,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_lifecycle/lifecycle_node.hpp>
 
+#include "furuta_control/shared_interface/spi_interface.h"
+
 namespace furuta_control
 {
 
@@ -16,19 +18,19 @@ public:
   ~PolicyControllerNode() override = default;
 
 protected:
-  // Transition: Unconfigured -> Inactive (load ONNX model, declare params, create pubs/subs)
+  // Transition: Unconfigured -> Inactive (declare params, load ONNX model, create pubs/subs)
   CallbackReturn on_configure(const rclcpp_lifecycle::State & previous_state) override;
 
-  // Transition: Inactive -> Active (enable publisher, start inference loop)
+  // Transition: Inactive -> Active (enable publishers, start real-time thread)
   CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
-  // Transition: Active -> Inactive (send zero velocity command, stop inference)
+  // Transition: Active -> Inactive (stop real-time thread, send stop frame)
   CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
-  // Transition: Inactive -> Unconfigured (release resources, reset smart pointers)
+  // Transition: Inactive -> Unconfigured (release ONNX session, reset publishers/subscribers)
   CallbackReturn on_cleanup(const rclcpp_lifecycle::State & previous_state) override;
 
-  // Transition: Any state -> Finalized (safe emergency stop and teardown)
+  // Transition: Any state -> Finalized (stop motor and tear down)
   CallbackReturn on_shutdown(const rclcpp_lifecycle::State & previous_state) override;
 
 private:
